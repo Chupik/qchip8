@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QStack>
+#include <QDebug>
 
 class cpu8 : public QObject
 {

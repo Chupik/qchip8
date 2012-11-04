@@ -20,6 +20,7 @@ public:
     QLabel *PClabel;
     QLabel *coplabel;
     QLabel *Ireglabel;
+    QTextEdit *memdumper;
     QTextEdit *intepreter_out;
     chip8_display *display;
     cpu8 *main_cpu;

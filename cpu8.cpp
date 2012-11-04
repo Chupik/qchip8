@@ -129,20 +129,24 @@ void cpu8::execute_opcode(unsigned short opcode) {
         V[get_x_opcode(opcode)] = get_random_number(0, 255) & get_nn_opcode(opcode);
         break;
     case 0xD:
-        unsigned short vmem_adress, vmem_offset, oreg, sdv;
+        unsigned short vmem_adress, vmem_offset, oreg, sdv, x, y;
         sdv = 0;
         oreg = 0;
+        x = V[get_x_opcode(opcode)];
+        y = V[get_y_opcode(opcode)];
         vmem_adress = convert_coordto_adress(V[get_x_opcode(opcode)], V[get_y_opcode(opcode)], vmem_offset);
-        for (int i = 0; i <= V[get_extendet_opcode(opcode)]; i++) {
-            if (memory[i + 0xF00 + vmem_adress + sdv] != memory[i + 0xF00 + vmem_adress] ^ (oreg + (memory[Ireg + i] >> vmem_offset)))
-                V[0xF] = 0x1;
-            else
-                V[0xF] = 0x0;
-            memory[i + 0xF00 + vmem_adress+ sdv] = memory[i + 0xF00 + vmem_adress] ^ (oreg + (memory[Ireg + i] >> vmem_offset));
-            oreg = memory[Ireg+i] << (0xF - vmem_offset);
-            if (i % 2 == 0 && i != 0)
-                sdv+=0x8;
+
+        for (int i = 0; i < get_extendet_opcode(opcode); i++) {
+            if (vmem_offset == 0)
+                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] || (memory[Ireg + i]);
+            else {
+                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] || (memory[Ireg + i] >> vmem_offset);
+                memory[0xF00 + vmem_adress + i * 0x8 + 1] = memory[0xF00 + vmem_adress + 1] || (unsigned char)(memory[Ireg + i] << (0x7 - vmem_offset)) >> (0x7 - vmem_offset);
+            }
+            qDebug() << tr("Iteration ") + QString::number(i, 10) + tr(" with mem adress ") + QString::number((0xF00 + vmem_adress + i * 0x8) & 0xFFFF, 16) + tr(" has value: ") + QString::number(memory[0xF00 + vmem_adress + i * 0x8], 16) + tr(". Nearest: ") + QString::number(memory[0xF00 + vmem_adress + i * 0x8 + 1], 16);
         }
+        //for (int i =0; i <= 0xFF; i++)
+         //   memory[0xF00 + i] = 0xAA;
         break;
     case 0xE:
         //clava
@@ -191,8 +195,8 @@ void cpu8::copy_memory(unsigned short from_adress, unsigned short to_adress) {
 }
 
 unsigned short cpu8::convert_coordto_adress(unsigned char x, unsigned char y, unsigned short &offset) {
-    offset = x % 0xF;
-    return y * 0x8 + x / 0xF;
+    offset = x % 0x8;
+    return y * 0x8 + x / 0x8;
 }
 
 void cpu8::clear_videomem() {
