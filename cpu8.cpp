@@ -136,12 +136,13 @@ void cpu8::execute_opcode(unsigned short opcode) {
         y = V[get_y_opcode(opcode)];
         vmem_adress = convert_coordto_adress(V[get_x_opcode(opcode)], V[get_y_opcode(opcode)], vmem_offset);
 
-        for (int i = 0; i < get_extendet_opcode(opcode); i++) {
+        for (int i = 0; i <= get_extendet_opcode(opcode); i++) {
             if (vmem_offset == 0)
-                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] || (memory[Ireg + i]);
+                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] | (memory[Ireg + i]);
             else {
-                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] || (memory[Ireg + i] >> vmem_offset);
-                memory[0xF00 + vmem_adress + i * 0x8 + 1] = memory[0xF00 + vmem_adress + 1] || (unsigned char)(memory[Ireg + i] << (0x7 - vmem_offset)) >> (0x7 - vmem_offset);
+                memory[0xF00 + vmem_adress + i * 0x8] = memory[0xF00 + vmem_adress] | (memory[Ireg + i] >> vmem_offset);
+                memory[0xF00 + vmem_adress + i * 0x8 + 1] = memory[0xF00 + vmem_adress + 1] | (unsigned char)(memory[Ireg + i] << (0x8 - vmem_offset)) >> (0x8 - vmem_offset);
+                qDebug() << tr("Before ") + QString::number(memory[Ireg + i], 2) + tr(", after trimming the adress ") + QString::number(Ireg + i, 16) + tr(" with value ") + QString::number((unsigned char)((memory[Ireg + i] << (0x7 - vmem_offset)) >> (0x7 - vmem_offset)), 2);
             }
             qDebug() << tr("Iteration ") + QString::number(i, 10) + tr(" with mem adress ") + QString::number((0xF00 + vmem_adress + i * 0x8) & 0xFFFF, 16) + tr(" has value: ") + QString::number(memory[0xF00 + vmem_adress + i * 0x8], 16) + tr(". Nearest: ") + QString::number(memory[0xF00 + vmem_adress + i * 0x8 + 1], 16);
         }
