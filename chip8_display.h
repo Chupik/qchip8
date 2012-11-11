@@ -10,7 +10,7 @@ class chip8_display : public QWidget
 public:
     explicit chip8_display(QWidget *parent = 0);
     void paintEvent(QPaintEvent *);
-    unsigned char *pVideoMem;
+    unsigned char (*pVideoMem)[32][64];
     bool mem_is_avaliable;
     
 signals:

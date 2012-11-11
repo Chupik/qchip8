@@ -27,9 +27,11 @@ public:
     void copy_memory(unsigned short from_adress, unsigned short to_adress);
     unsigned short convert_coordto_adress(unsigned char x, unsigned char y, unsigned short &offset);
     void clear_videomem();
+    void load_fonts();
 
     QStack<unsigned int> stack;
     unsigned char memory[0xFFF];  //ram
+    unsigned char video_mem[32][64]; //video memory
     unsigned char V[0xF];         //registers
     unsigned short Ireg;           //pointer to memory
     unsigned short SP;             //A stack pointer
@@ -37,12 +39,16 @@ public:
     short cpu_state;
     unsigned short cop;            //current opcode value
     QTimer *delay_timer;
+    QTimer *cpu_rate_timer;
     unsigned short delay_value;
+    int pressed_key;
     
 signals:
+    void video_mem_updated();
     
 public slots:
     void on_delay_timer_ticked();
+    void on_cpu_timer_tick();
     
 };
 

@@ -24,12 +24,15 @@ public:
     QTextEdit *intepreter_out;
     chip8_display *display;
     cpu8 *main_cpu;
+    void keyPressEvent(QKeyEvent *kevent);
+    void keyReleaseEvent(QKeyEvent * kevent);
 
 signals:
     
 public slots:
     void load_rom();
     void run_emulation();
+    void video_update_request();
 };
 
 #endif // MAINWINDOW_H

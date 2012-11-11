@@ -47,14 +47,11 @@ void mainwindow::load_rom() {
         romfile.open(QIODevice::ReadOnly);
         rom_data = romfile.readAll();
         main_cpu = new cpu8(&rom_data);
-        display->pVideoMem = main_cpu->memory + 0xF00;
+        display->pVideoMem = &main_cpu->video_mem;
         display->mem_is_avaliable = true;
         //qDebug() << QString::number(0xB - 0xF, 2);
-        for (int i = 0; i < rom_data.size(); i++)
-            qDebug() << QString::number(main_cpu->memory[i + 0x200], 16);
         display->update();
-        qDebug() << QString::number(main_cpu->memory[0x200], 16);
-        qDebug("Loaded");
+        connect(this->main_cpu, SIGNAL(video_mem_updated()), this, SLOT(video_update_request()));
     }
     else
         qDebug("File isnt selected");
@@ -76,7 +73,23 @@ void mainwindow::run_emulation() {
         //   memdumper->append("\n");
     }
     //qDebug("Running CPU...");
-    qDebug() << QString::number(main_cpu->PC, 10) + tr(" opcode: ") + QString::number(main_cpu->cop, 16);
+}
+
+void mainwindow::video_update_request() {
+    display->update();
+}
+
+void mainwindow::keyPressEvent(QKeyEvent *kevent) {
+    if (kevent->key() >= 0x30 && kevent->key() <=0x39)
+        main_cpu->pressed_key = kevent->key() - 0x30;
+    else if(kevent->key() >= 0x41 && kevent->key() <= 0x46)
+        main_cpu->pressed_key = kevent->key() - 0x37;
+    qDebug() << tr("Key Pressed");
+}
+
+void mainwindow::keyReleaseEvent(QKeyEvent *kevent) {
+    qDebug() << tr("Key Released");
+    main_cpu->pressed_key = 0x48;
 }
 
 int main (int argc, char *argv[]) {
