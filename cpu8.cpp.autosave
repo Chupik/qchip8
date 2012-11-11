@@ -146,7 +146,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         oreg = 0;
         x = V[get_x_opcode(opcode)];
         y = V[get_y_opcode(opcode)];
-        vmem_adress = convert_coordto_adress(V[get_x_opcode(opcode)], V[get_y_opcode(opcode)], vmem_offset) % 0xFF;
+        vmem_adress = convert_coordto_adress(V[get_x_opcode(opcode)], V[get_y_opcode(opcode)], vmem_offset);
 
         for (int i = 0; i < get_extendet_opcode(opcode); i++) {
             if (vmem_offset == 0)

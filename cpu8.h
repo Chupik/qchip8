@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QStack>
 #include <QDebug>
+#include <QTimer>
 
 class cpu8 : public QObject
 {
@@ -35,10 +36,13 @@ public:
     unsigned int PC;             //Program counter
     short cpu_state;
     unsigned short cop;            //current opcode value
+    QTimer *delay_timer;
+    unsigned short delay_value;
     
 signals:
     
 public slots:
+    void on_delay_timer_ticked();
     
 };
 
