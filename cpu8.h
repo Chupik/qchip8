@@ -1,3 +1,10 @@
+/*
+  //CHIP-8 Emulator
+  //v. 0.0.0.0.0.01 alpha
+  //Main programmer: Alex K.
+  //Main patcher: Roma T.
+  //Main designer: Alex K.
+*/
 #ifndef CPU8_H
 #define CPU8_H
 
@@ -15,6 +22,7 @@ public:
     void reset_memory();
     void run_cpu();
     void execute_opcode(unsigned short opcode);
+    void execute_single_opcode();
     unsigned short get_random_number(unsigned short low, unsigned short high);
     unsigned short generate_opcode(unsigned short mem_adress);
     unsigned short get_opcode(unsigned short opcode);

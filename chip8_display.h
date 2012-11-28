@@ -1,3 +1,10 @@
+/*
+  //CHIP-8 Emulator
+  //v. 0.0.0.0.0.01 alpha
+  //Main programmer: Alex K.
+  //Main patcher: Roma T.
+  //Main designer: Alex K.
+*/
 #ifndef CHIP8_DISPLAY_H
 #define CHIP8_DISPLAY_H
 

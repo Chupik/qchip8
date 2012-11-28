@@ -17,7 +17,7 @@ cpu8::cpu8(QByteArray *rom, QObject *parent) : QObject(parent) {
     connect(delay_timer, SIGNAL(timeout()), this, SLOT(on_delay_timer_ticked()));
     connect(cpu_rate_timer, SIGNAL(timeout()), this, SLOT(on_cpu_timer_tick()));
     delay_value = 0;
-    delay_timer->start(066);
+    delay_timer->start(0x8);
     pressed_key = 0x48;
     load_fonts();
 }
@@ -39,7 +39,7 @@ void cpu8::run_cpu() {
         execute_opcode(cop);
         */
     if (!cpu_state) {
-        cpu_rate_timer->start(20);
+        cpu_rate_timer->start(2);
         cpu_state = 1;
     }
     else {
@@ -48,7 +48,14 @@ void cpu8::run_cpu() {
     }
 }
 
+void cpu8::execute_single_opcode() {
+    cop = generate_opcode(PC);
+    execute_opcode(cop);
+    qDebug() << QString::number(this->PC, 10) + tr(" opcode: ") + QString::number(this->cop, 16) + " in sprite adr: " + QString::number(Ireg, 16);
+}
+
 void cpu8::execute_opcode(unsigned short opcode) {
+    unsigned short tempsr = Ireg;
     switch (get_opcode(opcode)) {
     case 0x0:
         switch (opcode) {
@@ -99,10 +106,10 @@ void cpu8::execute_opcode(unsigned short opcode) {
         break;
         //VX = VX + NN
     case 0x7:
-        if ((V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) > 0xFF)
-            V[0xF] = 0x1;
-        else
-            V[0xF] = 0x0;
+//        if ((V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) > 0xFF)
+//            V[0xF] = 0x1;
+//        else
+//            V[0xF] = 0x0;
         V[get_x_opcode(opcode)] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) & 0xFF;
         break;
     case 0x8:
@@ -170,6 +177,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //Ireg = NNN
     case 0xA:
         Ireg = get_nnn_opcode(opcode);
+        qDebug() << tr("Ireg has changed to: ") << QString::number(Ireg, 16);
         break;
         //jump to NNN + V0
     case 0xB:
@@ -187,6 +195,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         oreg = 0;
         x = V[get_x_opcode(opcode)];
         y = V[get_y_opcode(opcode)];
+       // Ireg = tempsr;
         /*vmem_adress = convert_coordto_adress(V[get_x_opcode(opcode)], V[get_y_opcode(opcode)], vmem_offset);
 
         for (int i = 0; i < get_extendet_opcode(opcode); i++) {
@@ -202,14 +211,22 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //for (int i =0; i <= 0xFF; i++)
          //   memory[0xF00 + i] = 0xAA;*/
        // if (get_extendet_opcode(opcode) == 0) - ДОЛЖНО БЫТЬ 1!!!!
-
+        //V[0xF] = 0;
         for (int i = 0; i < get_extendet_opcode(opcode); i++) {
             for (int n = 0; n < 8; n++) {
+                //video_mem[(y + i) % 32][(x + n) % 64] = 0;
+                //unsigned char temppam = memory
+                if(memory[Ireg] == 2)
+                    memory[Ireg] = 128;
+                else if(memory[Ireg] == 0x6A)
+                    memory[Ireg] = 128;
                 video_mem[(y + i) % 32][(x + n) % 64] ^= ((memory[Ireg + i] >> (0x7 - n)) & 0x1) << (0x7 - n);
                 if (((memory[Ireg + i] >> (0x7 - n)) & 0x1) << (0x7 - n) == 1 && ((video_mem[(y + i) % 32][(x + n) % 64] >> (0x7 - n)) & 0x1) << (0x7 - n) == 0)
                     V[0xF] = 1;
             }
+
         }
+        qDebug() << "Drawing at x: " + QString::number(x, 10) + " y: " + QString::number(y, 10) + " opcode: " + QString::number(opcode, 16) + tr(" sprite:") + QString::number(memory[Ireg], 2);
         emit video_mem_updated();
         break;
     case 0xE:
@@ -282,7 +299,7 @@ void cpu8::on_delay_timer_ticked() {
 void cpu8::on_cpu_timer_tick() {
     cop = generate_opcode(PC);
     execute_opcode(cop);
-    qDebug() << QString::number(this->PC, 10) + tr(" opcode: ") + QString::number(this->cop, 16);
+    //qDebug() << QString::number(this->PC, 10) + tr(" opcode: ") + QString::number(this->cop, 16);
 }
 
 unsigned short cpu8::generate_opcode(unsigned short mem_adress) {
@@ -339,7 +356,94 @@ void cpu8::load_fonts() {
     memory[1] = 0x90;
     memory[2] = 0x90;
     memory[3] = 0x90;
-    memory[4] = 0xF0;
-    //memory[5] = 0x
+    memory[4] = 0xF0; //0
+    memory[5] = 0x10;
+    memory[6] = 0x30;
+    memory[7] = 0x50;
+    memory[8] = 0x10;
+    memory[9] = 0x10;   //1
+    memory[10] = 0xF0;
+    memory[11] = 0x10;
+    memory[12] = 0xF0;
+    memory[13] = 0x80;
+    memory[14] = 0xF0;  //2
+    memory[15] = 0xF0;
+    memory[16] = 0x10;
+    memory[17] = 0xF0;
+    memory[18] = 0x10;
+    memory[19] = 0xF0;//3
+
+    memory[20] = 0x90;
+    memory[21] = 0x90;
+    memory[22] = 0xF0;
+    memory[23] = 0x10;
+    memory[24] = 0x10;//4
+
+    memory[25] = 0xf0;
+    memory[26] = 0x80;
+    memory[27] = 0xF0;
+    memory[28] = 0x10;
+    memory[29] = 0xf0;//5
+
+    memory[30] = 0xf0;
+    memory[31] = 0x80;
+    memory[32] = 0xF0;
+    memory[33] = 0x90;
+    memory[34] = 0xf0;//6
+
+    memory[35] = 0xf0;
+    memory[36] = 0x10;
+    memory[37] = 0x20;
+    memory[38] = 0x40;
+    memory[39] = 0x80;//7
+
+    memory[40] = 0xF0;
+    memory[41] = 0x90;
+    memory[42] = 0xf0;
+    memory[43] = 0x90;
+    memory[44] = 0xF0;//8
+
+    memory[45] = 0xF0;
+    memory[46] = 0x90;
+    memory[47] = 0xf0;
+    memory[48] = 0x10;
+    memory[49] = 0xF0;//9
+
+    memory[50] = 0x60;
+    memory[51] = 0x90;
+    memory[52] = 0x90;
+    memory[53] = 0xf0;
+    memory[54] = 0x90; //A
+
+    memory[55] = 0xe0;
+    memory[56] = 0x90;
+    memory[57] = 0xe0;
+    memory[58] = 0x90;
+    memory[59] = 0xe0; //B
+
+    memory[60] = 0xf0;
+    memory[61] = 0x80;
+    memory[62] = 0x80;
+    memory[63] = 0x80;
+    memory[64] = 0xf0; //C
+
+    memory[65] = 0xe0;
+    memory[66] = 0x90;
+    memory[67] = 0x90;
+    memory[68] = 0x90;
+    memory[69] = 0xe0; //D
+
+    memory[70] = 0xf0;
+    memory[71] = 0x80;
+    memory[72] = 0xf0;
+    memory[73] = 0x80;
+    memory[74] = 0xf0; //E
+
+    memory[75] = 0xf0;
+    memory[76] = 0x80;
+    memory[77] = 0xf0;
+    memory[78] = 0x80;
+    memory[79] = 0x80; //E
+
 
 }
