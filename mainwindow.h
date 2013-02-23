@@ -4,6 +4,9 @@
 #include <QWidget>
 #include <QApplication>
 #include <QtGui/QtGui>
+#include <QPushButton>
+#include <QGridLayout>
+#include <QFileDialog>
 /*
   //CHIP-8 Emulator
   //v. 0.0.0.0.0.01 alpha

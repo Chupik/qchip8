@@ -50,7 +50,7 @@ void mainwindow::load_rom() {
         romfile.open(QIODevice::ReadOnly);
         rom_data = romfile.readAll();
         main_cpu = new cpu8(&rom_data);
-        display->pVideoMem = &main_cpu->video_mem;
+        display->pVideoMem = main_cpu->video_mem;
         display->mem_is_avaliable = true;
         //qDebug() << QString::number(0xB - 0xF, 2);
         display->update();
