@@ -108,6 +108,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         break;
         //VX = VX + NN
     case 0x7:
+        //V[F] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) && 0xF
         V[get_x_opcode(opcode)] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) & 0xFF;
         break;
     case 0x8:
@@ -254,6 +255,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
             case 0x65:
                 for (int i = 0; i <= get_x_opcode(opcode); i++)
                     V[i] = memory[Ireg + i];
+                Ireg += get_x_opcode(opcode) + 1;
                 break;
 
 

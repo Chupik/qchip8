@@ -8,28 +8,9 @@ mainwindow::mainwindow(QWidget *parent) :
     run_button = new QPushButton(tr("Run Emulation"));
     load_button = new QPushButton(tr("Load ROM"));
     step_button = new QPushButton(tr("Step"));
-//    intepreter_out = new QTextEdit();
-//    memdumper = new QTextEdit();
     display = new chip8_display();
-//    PClabel = new QLabel("123");
-//    Ireglabel = new QLabel("Ireg = 0");
-//    coplabel = new QLabel("Curop = 0000");
-//    int rowl = 0;
     main_layout->addLayout(reglayout, 1, 2);
-  //  for (int i = 0; i < 0xF; i++) {
-  //      alotoflables[i] = new QLabel(tr("V") + QString::number(i, 16).toUpper() + tr(" = 0"));
-  //      reglayout->addWidget(alotoflables[i], rowl, (i % 4), Qt::AlignCenter);
-  //      if (i % 4 == 3) {
-  //          rowl++;
-  //      }
-  //  }
-//    main_layout->addWidget(memdumper, 7, 1, 3, 2);
-//    memdumper->setReadOnly(true);
     display->setMinimumSize(512, 256);
-//    main_layout->addWidget(Ireglabel, 6, 1);
-//    main_layout->addWidget(PClabel, 6, 3);
-//    main_layout->addWidget(coplabel, 6, 2);
-//    main_layout->addWidget(alotoflables[0xF], 6, 4);
     main_layout->addWidget(display, 1, 1);
     main_layout->addWidget(load_button, 4, 1);
     main_layout->addWidget(run_button, 4, 2);
@@ -52,7 +33,6 @@ void mainwindow::load_rom() {
         main_cpu = new cpu8(&rom_data);
         display->pVideoMem = main_cpu->video_mem;
         display->mem_is_avaliable = true;
-        //qDebug() << QString::number(0xB - 0xF, 2);
         display->update();
         connect(this->main_cpu, SIGNAL(video_mem_updated()), this, SLOT(video_update_request()));
     }
@@ -64,12 +44,7 @@ void mainwindow::run_emulation() {
     main_cpu->run_cpu();
     display->update();
     for (int i = 0; i <= 0xFF; i++) {
-        //memdumper->append(QString::number(main_cpu->memory[i + 0xF00], 2));
-        //memdumper->setText(QString::number(main_cpu->memory[i + 0xF00], 2) + memdumper->toPlainText());
-        //if (i % 8 == 0)
-        //   memdumper->append("\n");
     }
-    //qDebug("Running CPU...");
 }
 
 void mainwindow::video_update_request() {

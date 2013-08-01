@@ -38,8 +38,8 @@ public:
     void load_fonts();
 
     QStack<unsigned int> stack;
-    unsigned char memory[0xFFF];  //ram
-    unsigned char **video_mem; //[32][64]; //video memory
+    unsigned char memory[0x1000];    //ram
+    unsigned char **video_mem;      //[32][64] video memory
     unsigned char V[0x10];         //registers
     unsigned short Ireg;           //pointer to memory
     unsigned short SP;             //A stack pointer
