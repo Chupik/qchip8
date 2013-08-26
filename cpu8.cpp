@@ -30,7 +30,7 @@ void cpu8::reset_memory() {
         memory[i] = 0;
     for (int i = 0; i < 0xF; i++)
         V[i] = 0;
-    Ireg = 0x200;
+    Ireg = 0x000;
     PC = 0x200;
     SP = 0;
     cpu_state = 0;
@@ -108,7 +108,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         break;
         //VX = VX + NN
     case 0x7:
-        //V[F] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) && 0xF
+        //V[0xF] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) & 0x80;
         V[get_x_opcode(opcode)] = (V[get_x_opcode(opcode)] + get_nn_opcode(opcode)) & 0xFF;
         break;
     case 0x8:
@@ -162,7 +162,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
             break;
         //VX << 1, VF - carry flag
         case 0xE:
-            V[0xF] = V[get_x_opcode(opcode)] & 80;
+            V[0xF] = (V[get_x_opcode(opcode)] & 0x80) >> 7;
             V[get_x_opcode(opcode)] = V[get_x_opcode(opcode)] << 1;
             break;
         }
@@ -176,7 +176,9 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //Ireg = NNN
     case 0xA:
         Ireg = get_nnn_opcode(opcode);
+#ifdef USER_DEBUG
         qDebug() << tr("Ireg has changed to: ") << QString::number(Ireg, 16);
+#endif
         break;
         //jump to NNN + V0
     case 0xB:
@@ -185,22 +187,36 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //VX = random number
     case 0xC:
         V[get_x_opcode(opcode)] = get_random_number(0, 255) & get_nn_opcode(opcode);
+#ifdef USER_DEBUG
         qDebug() << tr("Your random is ") + QString::number(V[get_x_opcode(opcode)], 16);
+#endif
         break;
         //Draws at x = VX, y = VY sprite form I register with height of N
     case 0xD:
         unsigned short x, y;
         x = V[get_x_opcode(opcode)];
         y = V[get_y_opcode(opcode)];
+        V[0xF] = 0;
         for (int i = 0; i < get_extendet_opcode(opcode); i++) {
             for (int n = 0; n < 8; n++) {
-                video_mem[(y + i) % 32][(x + n) % 64] ^= ((memory[Ireg + i] >> (0x7 - n)) & 0x1) << (0x7 - n);
-                if (((memory[Ireg + i] >> (0x7 - n)) & 0x1) << (0x7 - n) == 1 && ((video_mem[(y + i) % 32][(x + n) % 64] >> (0x7 - n)) & 0x1) << (0x7 - n) == 0)
+                if (((memory[Ireg + i] >> (0x7 - n)) & 0x1) != 0 && (video_mem[(y + i) % 32][(x + n) % 64] == 1))
+                {
                     V[0xF] = 1;
+#ifdef USER_DEBUG
+                    qDebug() << tr("VF[0xF] setted to 1 (occlusion)");
+#endif
+                }
+#ifdef USER_DEBUG
+                qDebug() << tr("in mem:") + QString::number(((memory[Ireg + i] >> (0x7 - n)) & 0x1), 2) + tr("in v_ram: ") + QString::number(video_mem[(y + i) % 32][(x + n) % 64], 2);
+#endif
+                video_mem[(y + i) % 32][(x + n) % 64] ^= (memory[Ireg + i] >> (0x7 - n)) & 0x1;
+
             }
 
         }
+#ifdef USER_DEBUG
         qDebug() << "Drawing at x: " + QString::number(x, 10) + " y: " + QString::number(y, 10) + " opcode: " + QString::number(opcode, 16) + tr(" sprite:") + QString::number(memory[Ireg], 2);
+#endif
         emit video_mem_updated();
         break;
     case 0xE:
@@ -245,12 +261,13 @@ void cpu8::execute_opcode(unsigned short opcode) {
                 break;
             case 0x33:
                 memory[Ireg] = V[get_x_opcode(opcode)] / 100;
-                memory[Ireg + 0x1] = (V[get_x_opcode(opcode)] % 100) / 10;
-                memory[Ireg + 0x2] = V[get_x_opcode(opcode)] % 10;
+                memory[Ireg + 1] = (V[get_x_opcode(opcode)] % 100) / 10;
+                memory[Ireg + 2] = V[get_x_opcode(opcode)] % 10;
                 break;
             case 0x55:
                 for (int i = 0; i <= get_x_opcode(opcode); i++)
                     memory[Ireg + i] = V[i];
+                Ireg +=  get_x_opcode(opcode) + 1;
                 break;
             case 0x65:
                 for (int i = 0; i <= get_x_opcode(opcode); i++)

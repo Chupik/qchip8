@@ -8,6 +8,8 @@
 #ifndef CPU8_H
 #define CPU8_H
 
+//#define USER_DEBUG
+
 #include <QObject>
 #include <QStack>
 #include <QDebug>
