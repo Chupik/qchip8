@@ -7,14 +7,13 @@ cpu8::cpu8(QObject *parent) :
 }
 
 cpu8::cpu8(QByteArray *rom, QObject *parent) : QObject(parent) {
-    video_mem = new unsigned char*[32];
-    for (int i = 0; i < 32; i++)
-        video_mem[i] = new unsigned char[64];
+    video_mem = memory + VIDEO_RAM_OFFSET;
+    V = memory + REGISTERS_OFFSET;
+    stack = memory + STACK_OFFSET;
     this->reset_memory();
     for (int i = 0; i < int(rom->size()); i++)
         memory[i + 0x200] = (unsigned char)rom->at(i);
 
-    stack.resize(16);
     delay_timer = new QTimer();
     cpu_rate_timer = new QTimer();
     connect(delay_timer, SIGNAL(timeout()), this, SLOT(on_delay_timer_ticked()));
@@ -64,12 +63,17 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //clear the screen
         case 0x00E0:
             this->clear_videomem();
+#ifdef USER_DEBUG
             qDebug() << tr("Clearing the screen");
+#endif
             break;
         //return from subroutin
         case 0x00EE:
-        PC = stack.pop();
-        SP--;
+            PC = (stack[SP+1] << 0x8) | stack[SP];
+            SP += 3;
+#ifdef STACK_DEBUG
+            qDebug() << tr("Pop ") << QString::number(PC, 16) << tr(" from stack");
+#endif
             break;
         //call a program to an adress
         default:
@@ -83,8 +87,12 @@ void cpu8::execute_opcode(unsigned short opcode) {
         break;
         //jump to subroutin
     case 0x2:
-        stack.push(PC);
-        SP++;
+#ifdef STACK_DEBUG
+        qDebug() << tr("Push ") << QString::number(PC, 16) << tr(" to stack");
+#endif
+        SP -= 3;
+        stack[SP] = PC & 0xFF;
+        stack[SP+1] = (PC >> 0x8) & 0xF;
         PC = get_nnn_opcode(opcode) - 2;
         break;
         //skip the next instruction if VX equal to NN
@@ -124,7 +132,9 @@ void cpu8::execute_opcode(unsigned short opcode) {
         //VX = VX and VY
         case 0x2:
             V[get_x_opcode(opcode)] = V[get_x_opcode(opcode)] & V[get_y_opcode(opcode)];
+#ifdef USER_DEBUG
             qDebug() << QString::number(V[get_x_opcode(opcode)], 16) + tr(" and ") + QString::number(V[get_y_opcode(opcode)], 16) + tr(" = ") + QString::number(V[get_x_opcode(opcode)] & V[get_y_opcode(opcode)], 16);
+#endif
             break;
         //VX = VX xor VY
         case 0x3:
@@ -136,7 +146,9 @@ void cpu8::execute_opcode(unsigned short opcode) {
                 V[0xF] = 0x1;
             else
                 V[0xF] = 0x0;
+#ifdef USER_DEBUG
             qDebug() << tr("Adding: ") + QString::number(V[get_x_opcode(opcode)], 16) + tr(" + ") + QString::number(V[get_y_opcode(opcode)], 16) + tr(" = ") + QString::number((V[get_x_opcode(opcode)] + V[get_y_opcode(opcode)]) & 0xFF, 16) + tr(" with carry: ") + QString::number(V[0xF], 16);
+#endif
             V[get_x_opcode(opcode)] = (V[get_x_opcode(opcode)] + V[get_y_opcode(opcode)]) & 0xFF;
             break;
         //VX = VX - VY, VF - carry flag
@@ -199,7 +211,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
         V[0xF] = 0;
         for (int i = 0; i < get_extendet_opcode(opcode); i++) {
             for (int n = 0; n < 8; n++) {
-                if (((memory[Ireg + i] >> (0x7 - n)) & 0x1) != 0 && (video_mem[(y + i) % 32][(x + n) % 64] == 1))
+                if (((memory[Ireg + i] >> (0x7 - n)) & 0x1) != 0 && this->get_video_bit_from_ram((x + n) % 64, (y + i) % 32) == 1)
                 {
                     V[0xF] = 1;
 #ifdef USER_DEBUG
@@ -209,7 +221,7 @@ void cpu8::execute_opcode(unsigned short opcode) {
 #ifdef USER_DEBUG
                 qDebug() << tr("in mem:") + QString::number(((memory[Ireg + i] >> (0x7 - n)) & 0x1), 2) + tr("in v_ram: ") + QString::number(video_mem[(y + i) % 32][(x + n) % 64], 2);
 #endif
-                video_mem[(y + i) % 32][(x + n) % 64] ^= (memory[Ireg + i] >> (0x7 - n)) & 0x1;
+                this->write_bit_to_video((x + n) % 64, (y + i) % 32, (memory[Ireg + i] >> (0x7 - n)) & 0x1);
 
             }
 
@@ -335,12 +347,33 @@ unsigned short cpu8::convert_coordto_adress(unsigned char x, unsigned char y, un
     return y * 0x8 + x / 0x8;
 }
 
+bool cpu8::get_video_bit_from_ram(unsigned short x, unsigned short y)
+{
+    //в каждой строке 64/8 бит = 8 байт
+    //32 строки = 8*32 байт
+#ifdef VIDEO_DEBUG
+    qDebug() << tr("Read from video in x: ") << x << tr(" and y: ") << y << tr(" bit: ") << QString::number((bool)(((this->memory[VIDEO_RAM_OFFSET + y*8 + x/8] >> (7 - (x % 8))) & 0x1)), 2);
+#endif
+    return (bool)(((this->memory[VIDEO_RAM_OFFSET + y*8 + x/8] >> (7 - (x % 8))) & 0x1));
+}
+
+void cpu8::write_bit_to_video(unsigned short x, unsigned short y, bool bit)
+{
+    //if (this->get_video_bit_from_ram(x, y) != bit && this->get_video_bit_from_ram(x,y) != 0)
+#ifdef VIDEO_DEBUG
+    qDebug() << tr("Write to video in x: ") << x << tr(" and y: ") << y << tr(" bit: ") << QString::number(this->memory[VIDEO_RAM_OFFSET + y*8 + x/8], 2);
+#endif
+    this->memory[VIDEO_RAM_OFFSET + y*8 + x/8] ^= (bit << (7 - (x % 8)));
+}
+
 void cpu8::clear_videomem() {
-    for (int i = 0; i < 32; i++) {
-        for (int n = 0; n < 64; n++) {
-            video_mem[i][n] = 0;
-        }
-    }
+    for (int i = 0; i < 0xFF; i++)
+        video_mem[i] = 0;
+}
+
+void cpu8::dump_video_mem() {
+    for (int i = 0; i < 0xFF; i += 0x8)
+        qDebug() << QString::number(video_mem[i],2) << QString::number(video_mem[i+1],2) << QString::number(video_mem[i+2],2) << QString::number(video_mem[i+3],2) << QString::number(video_mem[i+4],2) << QString::number(video_mem[i+5],2) << QString::number(video_mem[i+6],2) << QString::number(video_mem[i+7],2);
 }
 
 void cpu8::load_fonts() {

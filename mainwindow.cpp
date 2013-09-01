@@ -52,7 +52,8 @@ void mainwindow::video_update_request() {
 }
 
 void mainwindow::do_step() {
-    main_cpu->execute_single_opcode();
+    //main_cpu->execute_single_opcode();
+    main_cpu->dump_video_mem();
 }
 
 void mainwindow::keyPressEvent(QKeyEvent *kevent) {
@@ -65,6 +66,7 @@ void mainwindow::keyPressEvent(QKeyEvent *kevent) {
 
 void mainwindow::keyReleaseEvent(QKeyEvent *kevent) {
     //qDebug() << tr("Key Released");
+    Q_UNUSED(kevent);
     main_cpu->pressed_key = 0x48;
 }
 

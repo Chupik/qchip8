@@ -16,7 +16,7 @@ void chip8_display::paintEvent(QPaintEvent *) {
     if (mem_is_avaliable) {
         for (int i = 0; i < 32; i++) {
             for (int n = 0; n < 64; n++) {
-                if (pVideoMem[i][n] != 0)
+                if(((pVideoMem[i*8 + n/8] >> (7 - (n % 8))) & 0x1) == 1)
                     disp_painter.drawPoint(n * pxsize + 1, i * pxsize + 1);
             }
         }
