@@ -338,15 +338,6 @@ unsigned short cpu8::get_random_number(unsigned short low, unsigned short high) 
     return qrand() % ((high+1) - low) + low;
 }
 
-void cpu8::copy_memory(unsigned short from_adress, unsigned short to_adress) {
-    memory[to_adress] = memory[from_adress];
-}
-
-unsigned short cpu8::convert_coordto_adress(unsigned char x, unsigned char y, unsigned short &offset) {
-    offset = x % 0x8;
-    return y * 0x8 + x / 0x8;
-}
-
 bool cpu8::get_video_bit_from_ram(unsigned short x, unsigned short y)
 {
     //в каждой строке 64/8 бит = 8 байт

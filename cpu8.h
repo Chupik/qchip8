@@ -47,11 +47,8 @@ public:
     //video memory mapping to RAM
     bool get_video_bit_from_ram(unsigned short x, unsigned short y);
     void write_bit_to_video(unsigned short x, unsigned short y, bool bit);
-    void copy_memory(unsigned short from_adress, unsigned short to_adress);
     //dump
     void dump_video_mem();
-    //deprecated
-    unsigned short convert_coordto_adress(unsigned char x, unsigned char y, unsigned short &offset);
     void clear_videomem();
     void load_fonts();
 
